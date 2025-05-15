@@ -1,0 +1,26 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+venv/
+
+# Model artifacts (jika tidak ingin diupload ke GitHub)
+# model/*.h5
+# model/*.pickle
+# model/*.pkl
+# model/*.joblib
+
+# Dataset (jika kamu punya nanti)
+*.csv
+
+# Log files
+*.log
+
+# NLTK data (jika ada disimpan lokal)
+nltk_data/
+
+# OS/IDE config
+.DS_Store
+.vscode/
+.idea/

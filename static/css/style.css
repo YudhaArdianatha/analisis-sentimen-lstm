@@ -1,3 +1,6 @@
+* {
+  font-family: poppins, sans-serif;
+}
 .bg-image {
   position: relative;
   background-image: url("/static/images/bg-index.jpg");
@@ -24,11 +27,11 @@
   font-size: 1rem;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: poppins, sans-serif;
+a {
+  text-decoration: none;
+}
+
+#sentimentChart {
+  max-width: 300px;
+  max-height: 300px;
 }

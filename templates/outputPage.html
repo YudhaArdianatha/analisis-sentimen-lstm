@@ -29,26 +29,35 @@
           </div>
           <div class="row justify-content-center align-items-center text-center m-3">
             <div class="col-md-2">
-              <button class="btn btn-outline-primary">Ulasan</button>
+              <button class="btn btn-outline-primary" id="btnSentiment">Ulasan</button>
             </div>
             <div class="col-md-2">
-              <button class="btn btn-outline-primary">File .csv</button>
+              <button class="btn btn-outline-primary" id="btnFile">File .csv</button>
             </div>
             <div class="col-md-2 me-5">
-              <button class="btn btn-outline-primary">Kode Aplikasi</button>
+              <button class="btn btn-outline-primary" id="btnKode">Kode Aplikasi</button>
             </div>
           </div>
           <div class="row justify-content-center">
             <div class="col-md-6">
-              <form action="/outputPage" method="post">
-                <div class="input-group mb-3">
+              <form action="/outputPage" method="POST" enctype="multipart/form-data">
+                <div class="input-group mb-3" id="inputSentiment">
                   <input type="text" class="form-control" name="sentiment" placeholder="Masukan suatu ulasan" />
-                  <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Button</button>
+                  <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Submit</button>
+                </div>
+                <div class="input-group text-center" id="inputFile">
+                  <input type="file" class="form-control" name="file" accept=".csv" placeholder="Masukan File .csv" />
+                  <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Upload</button>
+                  <h5 class="secondary-text">Semakin banyak datanya maka akan semakin lama proses akan berlangsung</h5>
+                </div>
+                <div class="input-group" id="inputKode">
+                  <input type="text" class="form-control" name="app_code" placeholder="Masukan kode aplikasi" />
+                  <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Submit</button>
                 </div>
               </form>
             </div>
           </div>
-          <div class="row justify-content-center text-center">
+          <div class="row justify-content-center text-center mt-3">
             <div class="col-md-6">
               <h5 class="secondary-text">Input dapat berupa ulasan / file dengan format .csv / kode dari aplikasi</h5>
             </div>
@@ -134,4 +143,49 @@
     </section>
   </body>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
+  <script>
+    const btnSentiment = document.getElementById("btnSentiment");
+    const btnFile = document.getElementById("btnFile");
+    const btnKode = document.getElementById("btnKode");
+
+    const inputSentiment = document.getElementById("inputSentiment");
+    const inputFile = document.getElementById("inputFile");
+    const inputKode = document.getElementById("inputKode");
+
+    const buttons = [btnSentiment, btnFile, btnKode];
+
+    btnSentiment.addEventListener("click", function () {
+      showInput("sentiment");
+    });
+
+    btnFile.addEventListener("click", function () {
+      showInput("file");
+    });
+
+    btnKode.addEventListener("click", function () {
+      showInput("kode");
+    });
+
+    function showInput(type) {
+      // Reset semua input dan tombol
+      inputSentiment.classList.add("d-none");
+      inputFile.classList.add("d-none");
+      inputKode.classList.add("d-none");
+
+      buttons.forEach((btn) => btn.classList.remove("active"));
+
+      // Tampilkan sesuai tipe yang dipilih
+      if (type === "sentiment") {
+        inputSentiment.classList.remove("d-none");
+        btnSentiment.classList.add("active");
+      } else if (type === "file") {
+        inputFile.classList.remove("d-none");
+        btnFile.classList.add("active");
+      } else if (type === "kode") {
+        inputKode.classList.remove("d-none");
+        btnKode.classList.add("active");
+      }
+    }
+    showInput("sentiment");
+  </script>
 </html>

@@ -27,6 +27,11 @@
               <h1>Input Sentimen</h1>
             </div>
           </div>
+          <div class="row justify-content-center text-center mt-1">
+            <div class="col-md-6">
+              <h5 class="secondary-text">Input dapat berupa ulasan / file dengan format .csv / kode dari aplikasi</h5>
+            </div>
+          </div>
           <div class="row justify-content-center align-items-center text-center m-3">
             <div class="col-md-2">
               <button class="btn btn-outline-primary" id="btnSentiment">Ulasan</button>
@@ -45,21 +50,19 @@
                   <input type="text" class="form-control" name="sentiment" placeholder="Masukan suatu ulasan" />
                   <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Submit</button>
                 </div>
-                <div class="input-group text-center" id="inputFile">
-                  <input type="file" class="form-control" name="file" accept=".csv" placeholder="Masukan File .csv" />
-                  <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Upload</button>
-                  <h5 class="secondary-text">Semakin banyak datanya maka akan semakin lama proses akan berlangsung</h5>
+                <div class="input-group text-center justify-content-center" id="inputFile">
+                  <div class="input-group">
+                    <input type="file" class="form-control" name="file" accept=".csv" placeholder="Masukan File .csv" />
+                    <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Upload</button>
+                  </div>
+                  <h5 class="secondary-text mt-3">Semakin banyak data, semakin lama prosesnya.</h5>
+                  <h5 class="secondary-text">Kolom ulasan harus bernama 'content' (tanpa tanda petik).</h5>
                 </div>
                 <div class="input-group" id="inputKode">
                   <input type="text" class="form-control" name="app_code" placeholder="Masukan kode aplikasi" />
                   <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Submit</button>
                 </div>
               </form>
-            </div>
-          </div>
-          <div class="row justify-content-center text-center mt-3">
-            <div class="col-md-6">
-              <h5 class="secondary-text">Input dapat berupa ulasan / file dengan format .csv / kode dari aplikasi</h5>
             </div>
           </div>
         </div>

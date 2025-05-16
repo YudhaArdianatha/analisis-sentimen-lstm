@@ -45,19 +45,23 @@
           </div>
           <div class="row justify-content-center">
             <div class="col-md-6">
-              <form action="/outputPage" method="POST" enctype="multipart/form-data">
+              <form action="/analyze_text" method="POST">
                 <div class="input-group mb-3" id="inputSentiment">
-                  <input type="text" class="form-control" name="sentiment" placeholder="Masukan suatu ulasan" />
+                  <input type="text" class="form-control" name="text" placeholder="Masukan suatu ulasan" />
                   <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Submit</button>
                 </div>
+              </form>
+              <form action="/analyze_csv" method="POST" enctype="multipart/form-data">
                 <div class="input-group text-center justify-content-center" id="inputFile">
                   <div class="input-group">
-                    <input type="file" class="form-control" name="file" accept=".csv" placeholder="Masukan File .csv" />
+                    <input type="file" class="form-control" name="file" accept=".xlsx, .xls" placeholder="Masukan File .csv" />
                     <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Upload</button>
                   </div>
                   <h5 class="secondary-text mt-3">Semakin banyak data, semakin lama prosesnya.</h5>
                   <h5 class="secondary-text">Kolom ulasan harus bernama 'content' (tanpa tanda petik).</h5>
                 </div>
+              </form>
+              <form action="" method="POST" enctype="multipart/form-data">
                 <div class="input-group" id="inputKode">
                   <input type="text" class="form-control" name="app_code" placeholder="Masukan kode aplikasi" />
                   <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Submit</button>

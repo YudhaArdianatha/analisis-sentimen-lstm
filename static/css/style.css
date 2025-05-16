@@ -26,3 +26,12 @@
   color: #6d6d6d;
   font-size: 1rem;
 }
+
+a {
+  text-decoration: none;
+}
+
+#sentimentChart {
+  max-width: 300px;
+  max-height: 300px;
+}

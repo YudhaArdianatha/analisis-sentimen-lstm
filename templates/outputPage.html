@@ -83,8 +83,13 @@
               <h4>Ulasan : {{ text }}</h4>
               <h4>Prediksi sentimen {{ sentiment }}</h4>
               {% endif %} {% if percentages %}
-              <div class="d-flex justify-content-center">
-                <canvas id="sentimentChart"></canvas>
+              <div class="row justify-content-center align-items-center">
+                <div class="col-md-6">
+                  <canvas id="sentimentChart" class="chart-canvas"></canvas>
+                </div>
+                <div class="col-md-6">
+                  <img src="/{{ wordcloud_path }}" alt="Word Cloud" class="wc-img" />
+                </div>
               </div>
               <script>
                 var ctx = document.getElementById("sentimentChart").getContext("2d");
@@ -108,9 +113,7 @@
               </script>
             </div>
           </div>
-          <div class="row mt-3 p-3">
-            <img src="/{{ wordcloud_path }}" alt="Word Cloud" class="img-fluid wc-img" />
-          </div>
+          <div class="row mt-3 p-3"></div>
           <div class="row mt-3 p-3">
             <div class="row">
               <div class="col-md-11">

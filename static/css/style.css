@@ -28,12 +28,21 @@
 }
 
 .wc-img {
-  width: 100px;
-  height: 100px;
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
 }
 
 a {
   text-decoration: none;
+}
+
+.chart-canvas {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 #sentimentChart {

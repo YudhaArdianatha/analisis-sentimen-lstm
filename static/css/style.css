@@ -27,6 +27,11 @@
   font-size: 1rem;
 }
 
+.wc-img {
+  width: 100px;
+  height: 100px;
+}
+
 a {
   text-decoration: none;
 }

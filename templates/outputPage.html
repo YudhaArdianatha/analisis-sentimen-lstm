@@ -57,7 +57,7 @@
                   <h5 class="secondary-text">Kolom ulasan harus bernama 'content' (tanpa tanda petik).</h5>
                 </div>
               </form>
-              <form action="" method="POST" enctype="multipart/form-data">
+              <form action="/analyze_appcode" method="POST" enctype="multipart/form-data">
                 <div class="input-group" id="inputKode">
                   <input type="text" class="form-control" name="app_code" placeholder="Masukan kode aplikasi" />
                   <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Submit</button>
@@ -83,7 +83,9 @@
               <h4>Ulasan : {{ text }}</h4>
               <h4>Prediksi sentimen {{ sentiment }}</h4>
               {% endif %} {% if percentages %}
-              <canvas id="sentimentChart" width="200" height="200" class="justify-content-center"></canvas>
+              <div class="d-flex justify-content-center">
+                <canvas id="sentimentChart"></canvas>
+              </div>
               <script>
                 var ctx = document.getElementById("sentimentChart").getContext("2d");
                 var sentimentChart = new Chart (ctx, {
@@ -107,6 +109,9 @@
             </div>
           </div>
           <div class="row mt-3 p-3">
+            <img src="/{{ wordcloud_path }}" alt="Word Cloud" class="img-fluid wc-img" />
+          </div>
+          <div class="row mt-3 p-3">
             <div class="row">
               <div class="col-md-11">
                 <h4>Kesimpulan</h4>
@@ -117,10 +122,7 @@
             </div>
             <div class="row">
               <div class="col-md mt-3">
-                <h5>
-                  Lorem ipsum dolor sit amet, consectetur adipisicing elit. Veniam aliquid inventore velit. Veniam sapiente natus libero suscipit voluptate, illum officiis, cum dolores eos incidunt quos esse molestiae molestias voluptatibus
-                  repellendus.
-                </h5>
+                <h5>Dari total {{ jumlah_data }} ulasan yang diambil, {{ percentages['positif'] }}% bersifat positif, {{ percentages['negatif'] }}% negatif, dan {{ percentages['netral'] }}% netral.</h5>
               </div>
             </div>
           </div>
@@ -177,25 +179,26 @@
 
     btnSentiment.addEventListener("click", function () {
       showInput("sentiment");
+      localStorage.setItem("lastInput", "sentiment");
     });
 
     btnFile.addEventListener("click", function () {
       showInput("file");
+      localStorage.setItem("lastInput", "file");
     });
 
     btnKode.addEventListener("click", function () {
       showInput("kode");
+      localStorage.setItem("lastInput", "kode");
     });
 
     function showInput(type) {
-      // Reset semua input dan tombol
       inputSentiment.classList.add("d-none");
       inputFile.classList.add("d-none");
       inputKode.classList.add("d-none");
 
       buttons.forEach((btn) => btn.classList.remove("active"));
 
-      // Tampilkan sesuai tipe yang dipilih
       if (type === "sentiment") {
         inputSentiment.classList.remove("d-none");
         btnSentiment.classList.add("active");
@@ -207,6 +210,9 @@
         btnKode.classList.add("active");
       }
     }
-    showInput("sentiment");
+
+    // Ambil pilihan terakhir dari localStorage saat halaman dimuat
+    const lastInput = localStorage.getItem("lastInput") || "sentiment";
+    showInput(lastInput);
   </script>
 </html>

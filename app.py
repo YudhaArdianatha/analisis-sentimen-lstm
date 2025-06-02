@@ -51,13 +51,14 @@ def preprocess_new_text(text):
 @app.route('/analyze_csv', methods=['POST'])
 def analyze_csv():
     if 'file' not in request.files:
-        return "No file part"
+        return render_template('index.html', error_message="Tidak ada file yang diunggah.")
     
     file = request.files['file']
     if file.filename == '':
-        return "No selected file"
+        return render_template('index.html', error_message="Nama file kosong.")
+    
     if not (file.filename.endswith('.xlsx') or file.filename.endswith('.xls')):
-        return "Only Excel files (.xlsx or .xls) are supported"
+        return render_template('index.html', error_message="Hanya file Excel (.xlsx atau .xls) yang didukung.")
     
     filename= secure_filename(file.filename)
     filepath = os.path.join(UPLOAD_FOLDER, filename)
@@ -65,11 +66,22 @@ def analyze_csv():
 
     try:
         df = pd.read_excel(filepath)
-    except Exception as e:
-        return f"Gagal membaca file Excel: {e}"
 
-    if 'content' not in df.columns:
-        return "Excel file must contain a 'content' column"
+        # Validasi jika file Excel kosong
+        if df.empty:
+            return render_template('index.html', error_message="File Excel kosong. Mohon upload file yang berisi data.")
+        
+        # Validasi jika kolom 'content' tidak ada
+        if 'content' not in df.columns:
+            return render_template('index.html', error_message="File Excel tidak memiliki kolom 'content'. Pastikan ada kolom bernama 'content' di file Excel Anda.")
+        
+        # Validasi jika kolom 'content' kosong
+        if df['content'].isna().all() or df['content'].str.strip().eq('').all():
+            return render_template('index.html', error_message="Kolom 'content' kosong. Pastikan kolom 'content' berisi data ulasan.")
+        
+    except Exception as e:
+        return render_template('index.html', error_message=f"Gagal membaca file Excel: {e}")
+
     
     df['stemmed'] = df['content'].astype(str).apply(preprocess_new_text)
 
@@ -82,6 +94,10 @@ def analyze_csv():
     predictions = model.predict(padded)
     predictions_classes = np.argmax(predictions, axis=1)
     df['sentiment'] = label_encoder.inverse_transform(predictions_classes)
+
+    confindence_scores = np.max(predictions, axis=1)
+    df['confidence_score'] = confindence_scores
+    average_confidence = round(float(np.mean(confindence_scores)), 4)
 
     result_filename = f'result_{filename}'
     result_path = os.path.join(RESULT_FOLDER, result_filename)
@@ -105,6 +121,7 @@ def analyze_csv():
         download_link=result_filename,
         jumlah_data=jumlah_data,
         wordcloud_path=f'static/{wordclod_filename}',
+        average_confidence=average_confidence,
         )
 
 @app.route('/download/<filename>')
@@ -131,14 +148,15 @@ def analyze_text():
     prediction = model.predict(padded_sequence)
     prediction_label = np.argmax(prediction, axis=1)
     decoded_label = label_encoder.inverse_transform(prediction_label)
+    confidence_score = float(np.max(prediction))
 
-    return render_template('outputPage.html', sentiment=decoded_label[0], text=text, stemmed=stemmed)
+    return render_template('outputPage.html', sentiment=decoded_label[0], text=text, stemmed=stemmed, confidence_score=confidence_score)
 
 @app.route('/analyze_appcode', methods=['POST'])
 def analyze_appcode():
     app_code = request.form.get('app_code', '').strip()
     if not app_code:
-        return "App code is required"
+        return render_template('index.html', error_message="Kode aplikasi tidak boleh kosong.")
     
     try:
         result, _ = reviews(
@@ -146,13 +164,14 @@ def analyze_appcode():
             lang='id',
             country='ID',
             sort=Sort.NEWEST,
-            count=100
+            count=1000
         )
+        if not result:
+            return render_template('index.html', error_message="Tidak ada ulasan yang ditemukan untuk kode aplikasi ini.")
+        
     except Exception as e:
-        return f"Gagal mengambil data dari PlayStore: {e}"
+        return render_template('index.html', error_message=f"Gagal mengambil data dari PlayStore: Kode aplikasi '{app_code}' tidak ditemukan atau terjadi kesalahan saat mengakses data.")
     
-    if not result:
-        return "Tidak ada ulasan yang ditemukan untuk app code ini"
     
     df = pd.DataFrame(result)
     df = df[['content']]
@@ -167,6 +186,10 @@ def analyze_appcode():
     predictions = model.predict(padded)
     predictions_classes = np.argmax(predictions, axis=1)
     df['sentiment'] = label_encoder.inverse_transform(predictions_classes)
+
+    confindence_scores = np.max(predictions, axis=1)
+    df['confidence_score'] = confindence_scores
+    average_confidence = round(float(np.mean(confindence_scores)), 4)
 
     result_filename = f'result_{app_code}.xlsx'
     result_path = os.path.join(RESULT_FOLDER, result_filename)
@@ -190,6 +213,7 @@ def analyze_appcode():
         download_link=result_filename,
         jumlah_data=jumlah_data,
         wordcloud_path=f'static/{wordclod_filename}',
+        average_confidence=average_confidence,
     )
 
 def generate_wordcloud(text, save_path):

@@ -16,7 +16,7 @@
           Analisis sentimen adalah proses memahami dan mengelompokkan emosi dalam teks untuk mengungkap opini positif, negatif, atau netral, sehingga membantu bisnis dan peneliti memahami pandangan pengguna secara mendalam.
         </p>
         <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
-          <button type="button" class="btn btn-dark btn-lg px-4 gap-3">Primary button</button>
+          <button type="button" class="btn btn-dark btn-lg px-4 gap-3">Mulai Analisis</button>
         </div>
       </div>
     </div>
@@ -28,12 +28,24 @@
               <h1>Input Sentimen</h1>
             </div>
           </div>
+          <div class="row justify-content-center text-center mt-3">
+            <div class="col-md-6">
+              <h5 class="secondary-text">Input dapat berupa ulasan / file dengan format .csv / kode dari aplikasi</h5>
+            </div>
+          </div>
+          {% if error_message %}
+          <div class="row justify-content-center text-center mt-3">
+            <div class="col-md-6">
+              <div class="alert alert-danger">{{ error_message }}</div>
+            </div>
+          </div>
+          {% endif %}
           <div class="row justify-content-center align-items-center text-center m-3">
             <div class="col-md-2">
               <button class="btn btn-outline-primary" id="btnSentiment">Ulasan</button>
             </div>
             <div class="col-md-2">
-              <button class="btn btn-outline-primary" id="btnFile">File .csv</button>
+              <button class="btn btn-outline-primary" id="btnFile">File Excel</button>
             </div>
             <div class="col-md-2 me-5">
               <button class="btn btn-outline-primary" id="btnKode">Kode Aplikasi</button>
@@ -43,31 +55,30 @@
             <div class="col-md-6">
               <form action="/analyze_text" method="POST">
                 <div class="input-group mb-3" id="inputSentiment">
-                  <input type="text" class="form-control" name="text" placeholder="Masukan suatu ulasan" />
+                  <input type="text" class="form-control" name="text" placeholder="Masukan suatu ulasan" required autocomplete="off" />
                   <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Submit</button>
+                  <div class="invalid-feedback">Ulasan tidak boleh kosong.</div>
                 </div>
               </form>
               <form action="/analyze_csv" method="POST" enctype="multipart/form-data">
                 <div class="input-group text-center justify-content-center" id="inputFile">
                   <div class="input-group">
-                    <input type="file" class="form-control" name="file" accept=".xlsx, .xls" placeholder="Masukan File .csv" />
+                    <input type="file" class="form-control" name="file" accept=".xlsx, .xls" placeholder="Masukan File .csv" required autocomplete="off" />
                     <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Upload</button>
                   </div>
                   <h5 class="secondary-text mt-3">Semakin banyak data, semakin lama prosesnya.</h5>
                   <h5 class="secondary-text">Kolom ulasan harus bernama 'content' (tanpa tanda petik).</h5>
+                  {% if error_message %}
+                  <div class="alert alert-danger mt3">{{ error_message }}</div>
+                  {% endif %}
                 </div>
               </form>
               <form action="/analyze_appcode" method="POST" enctype="multipart/form-data">
                 <div class="input-group" id="inputKode">
-                  <input type="text" class="form-control" name="app_code" placeholder="Masukan kode aplikasi" />
+                  <input type="text" class="form-control" name="app_code" placeholder="Masukan kode aplikasi" required autocomplete="off" />
                   <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Submit</button>
                 </div>
               </form>
-            </div>
-          </div>
-          <div class="row justify-content-center text-center mt-3">
-            <div class="col-md-6">
-              <h5 class="secondary-text">Input dapat berupa ulasan / file dengan format .csv / kode dari aplikasi</h5>
             </div>
           </div>
         </div>
@@ -82,6 +93,7 @@
               {% if sentiment %}
               <h4>Ulasan : {{ text }}</h4>
               <h4>Prediksi sentimen {{ sentiment }}</h4>
+              <h5>Confidence Score : {{ confidence_score | round(4) }}</h5>
               {% endif %} {% if percentages %}
               <div class="row justify-content-center align-items-center">
                 <div class="col-md-6">
@@ -89,6 +101,15 @@
                 </div>
                 <div class="col-md-6">
                   <img src="/{{ wordcloud_path }}" alt="Word Cloud" class="wc-img" />
+                </div>
+              </div>
+              <div class="row justify-content-center align-items-center mt-1">
+                <div class="col">
+                  {% if average_confidence %}
+                  <div class="text-center mt-3">
+                    <h5>Rata-rata Confidence Score: {{ average_confidence }}</h5>
+                  </div>
+                  {% endif %}
                 </div>
               </div>
               <script>
@@ -113,7 +134,6 @@
               </script>
             </div>
           </div>
-          <div class="row mt-3 p-3"></div>
           <div class="row mt-3 p-3">
             <div class="row">
               <div class="col-md-11">
@@ -125,7 +145,11 @@
             </div>
             <div class="row">
               <div class="col-md mt-3">
-                <h5>Dari total {{ jumlah_data }} ulasan yang diambil, {{ percentages['positif'] }}% bersifat positif, {{ percentages['negatif'] }}% negatif, dan {{ percentages['netral'] }}% netral.</h5>
+                <h5>
+                  Dari total {{ jumlah_data }} ulasan yang diambil, {{ percentages['positif'] }}% bersifat positif, {{ percentages['negatif'] }}% negatif, dan {{ percentages['netral'] }}% netral. Gunakan data ini sebaik mungkin untuk
+                  memahami persepsi pengguna dan meningkatkan kualitas layanan secara menyeluruh. Temuan ini dapat membantu dalam mengidentifikasi keunggulan serta area yang masih perlu diperbaiki. Dengan analisis yang tepat, data ini dapat
+                  menjadi dasar pengambilan keputusan yang lebih terarah dan berkelanjutan.
+                </h5>
               </div>
             </div>
           </div>
@@ -217,5 +241,37 @@
     // Ambil pilihan terakhir dari localStorage saat halaman dimuat
     const lastInput = localStorage.getItem("lastInput") || "sentiment";
     showInput(lastInput);
+
+    // Validasi form sebelum submit
+    document.getElementById("textForm").addEventListener("submit", function (e) {
+      const input = this.querySelector('input[name="text"]');
+      if (!input.value.trim()) {
+        e.preventDefault();
+        input.classList.add("is-invalid");
+      }
+    });
+
+    document.getElementById("fileForm").addEventListener("submit", function (e) {
+      const input = this.querySelector('input[name="file"]');
+      if (!input.files || input.files.length === 0) {
+        e.preventDefault();
+        input.classList.add("is-invalid");
+      }
+    });
+
+    document.getElementById("appForm").addEventListener("submit", function (e) {
+      const input = this.querySelector('input[name="app_code"]');
+      if (!input.value.trim()) {
+        e.preventDefault();
+        input.classList.add("is-invalid");
+      }
+    });
+
+    // Reset validasi saat input diubah
+    document.querySelectorAll("input").forEach((input) => {
+      input.addEventListener("input", function () {
+        this.classList.remove("is-invalid");
+      });
+    });
   </script>
 </html>

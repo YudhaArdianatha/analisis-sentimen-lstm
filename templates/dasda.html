@@ -28,9 +28,9 @@
               <h1>Input Sentimen</h1>
             </div>
           </div>
-          <div class="row justify-content-center text-center mt-3">
+          <div class="row justify-content-center text-center mt-1">
             <div class="col-md-6">
-              <h5 class="secondary-text">Input dapat berupa ulasan / file dengan format .csv / kode dari aplikasi</h5>
+              <h5 class="secondary-text">Input dapat berupa ulasan / file excel / kode dari aplikasi</h5>
             </div>
           </div>
           {% if error_message %}
@@ -53,108 +53,101 @@
           </div>
           <div class="row justify-content-center">
             <div class="col-md-6">
-              <form action="/analyze_text" method="POST">
+              <form id="textForm" action="/analyze_text" method="POST">
                 <div class="input-group mb-3" id="inputSentiment">
                   <input type="text" class="form-control" name="text" placeholder="Masukan suatu ulasan" required autocomplete="off" />
                   <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Submit</button>
-                  <div class="invalid-feedback">Ulasan tidak boleh kosong.</div>
+                  <div id="textError" class="text-danger mb-3" style="display: none">Harap masukkan ulasan terlebih dahulu.</div>
                 </div>
               </form>
-              <form action="/analyze_csv" method="POST" enctype="multipart/form-data">
+              <form id="fileForm" action="/analyze_csv" method="POST" enctype="multipart/form-data">
                 <div class="input-group text-center justify-content-center" id="inputFile">
                   <div class="input-group">
-                    <input type="file" class="form-control" name="file" accept=".xlsx, .xls" placeholder="Masukan File .csv" required autocomplete="off" />
+                    <input type="file" class="form-control" name="file" accept=".xlsx, .xls" placeholder="Masukan File .csv" required />
                     <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Upload</button>
                   </div>
+                  <div id="fileError" class="text-danger mb-3" style="display: none">Harap unggah file terlebih dahulu.</div>
+
                   <h5 class="secondary-text mt-3">Semakin banyak data, semakin lama prosesnya.</h5>
                   <h5 class="secondary-text">Kolom ulasan harus bernama 'content' (tanpa tanda petik).</h5>
-                  {% if error_message %}
-                  <div class="alert alert-danger mt3">{{ error_message }}</div>
-                  {% endif %}
                 </div>
               </form>
-              <form action="/analyze_appcode" method="POST" enctype="multipart/form-data">
+              <form id="appForm" action="/analyze_appcode" method="POST" enctype="multipart/form-data">
                 <div class="input-group" id="inputKode">
                   <input type="text" class="form-control" name="app_code" placeholder="Masukan kode aplikasi" required autocomplete="off" />
                   <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Submit</button>
+                  <div id="appCodeError" class="text-danger mt-2" style="display: none">Harap masukkan kode aplikasi terlebih dahulu.</div>
                 </div>
               </form>
             </div>
           </div>
         </div>
-        <div class="row mt-3 p-3">
-          <div class="row justify-content-center text-center">
-            <div class="col-md mt-3">
-              <h2>Hasil Analisis Sentimen</h2>
+
+        {% if sentiment or percentages %}
+        <div class="row mt-5 p-3">
+          <div class="col-md-12 text-center">
+            <h2>Hasil Analisis Sentimen</h2>
+          </div>
+
+          {% if sentiment %}
+          <div class="text-center mt-3">
+            <h4>Ulasan: {{ text }}</h4>
+            <h4>Prediksi sentimen: {{ sentiment }}</h4>
+            <h5>Confidence Score: {{ confidence_score | round(4) }}</h5>
+          </div>
+          {% endif %} {% if percentages %}
+          <div class="row justify-content-center align-items-center">
+            <div class="col-md-6">
+              <canvas id="sentimentChart" class="chart-canvas"></canvas>
+            </div>
+            <div class="col-md-6">
+              <img src="/{{ wordcloud_path }}" alt="Word Cloud" class="wc-img" />
             </div>
           </div>
-          <div class="row mt-1 p-3">
-            <div class="col-md mt-3 justify-content-center">
-              {% if sentiment %}
-              <h4>Ulasan : {{ text }}</h4>
-              <h4>Prediksi sentimen {{ sentiment }}</h4>
-              <h5>Confidence Score : {{ confidence_score | round(4) }}</h5>
-              {% endif %} {% if percentages %}
-              <div class="row justify-content-center align-items-center">
-                <div class="col-md-6">
-                  <canvas id="sentimentChart" class="chart-canvas"></canvas>
-                </div>
-                <div class="col-md-6">
-                  <img src="/{{ wordcloud_path }}" alt="Word Cloud" class="wc-img" />
-                </div>
-              </div>
-              <div class="row justify-content-center align-items-center mt-1">
-                <div class="col">
-                  {% if average_confidence %}
-                  <div class="text-center mt-3">
-                    <h5>Rata-rata Confidence Score: {{ average_confidence }}</h5>
-                  </div>
-                  {% endif %}
-                </div>
-              </div>
-              <script>
-                var ctx = document.getElementById("sentimentChart").getContext("2d");
-                var sentimentChart = new Chart (ctx, {
-                  type: 'pie',
-                  data: {
-                    labels : ['Positif', 'Negatif', 'Netral'],
-                    datasets: [{
-                      label: 'Persentase Sentimen',
-                      data: [{{ percentages['positif'] }},
-                            {{ percentages['negatif'] }},
-                            {{ percentages['netral'] }}],
-                    backgroundColor: ['#4CAF50', '#F44336', '#FFC107'],
-                    }]
-                  },
-                  options: {
-                    responsive: true,
-                    maintainAspectRatio: false
-                  }
-                })
-              </script>
+
+          {% if average_confidence %}
+          <div class="text-center mt-3">
+            <h5>Rata-rata Confidence Score: {{ average_confidence }}</h5>
+          </div>
+          {% endif %}
+          <script>
+            var ctx = document.getElementById("sentimentChart").getContext("2d");
+            var sentimentData = {{ [percentages['positif'], percentages['negatif'], percentages['netral']] | tojson }};
+            var sentimentChart = new Chart(ctx, {
+              type: 'pie',
+              data: {
+                labels: ['Positif', 'Negatif', 'Netral'],
+                datasets: [{
+                  label: 'Persentase Sentimen',
+                  data: sentimentData,
+                  backgroundColor: ['#4CAF50', '#F44336', '#FFC107']
+                }]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false
+              }
+            });
+          </script>
+          <div class="row mt-4">
+            <div class="col-md-11">
+              <h4>Kesimpulan</h4>
+            </div>
+            <div class="col-md-1">
+              <a href="/download/{{ download_link }}"><button class="btn btn-primary">Download</button></a>
             </div>
           </div>
-          <div class="row mt-3 p-3">
-            <div class="row">
-              <div class="col-md-11">
-                <h4>Kesimpulan</h4>
-              </div>
-              <div class="col-md-1">
-                <a href="/download/{{ download_link }}"><button class="btn btn-primary">Download</button></a>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-md mt-3">
-                <h5>
-                  Dari total {{ jumlah_data }} ulasan yang diambil, {{ percentages['positif'] }}% bersifat positif, {{ percentages['negatif'] }}% negatif, dan {{ percentages['netral'] }}% netral. Gunakan data ini sebaik mungkin untuk
-                  memahami persepsi pengguna dan meningkatkan kualitas layanan secara menyeluruh. Temuan ini dapat membantu dalam mengidentifikasi keunggulan serta area yang masih perlu diperbaiki. Dengan analisis yang tepat, data ini dapat
-                  menjadi dasar pengambilan keputusan yang lebih terarah dan berkelanjutan.
-                </h5>
-              </div>
-            </div>
+          <div class="mt-3">
+            <h5>
+              Dari total {{ jumlah_data }} ulasan yang diambil, {{ percentages['positif'] }}% positif, {{ percentages['negatif'] }}% negatif, dan {{ percentages['netral'] }}% netral. Gunakan data ini sebaik mungkin untuk memahami persepsi
+              pengguna dan meningkatkan kualitas layanan secara menyeluruh. Temuan ini dapat membantu dalam mengidentifikasi keunggulan serta area yang masih perlu diperbaiki. Dengan analisis yang tepat, data ini dapat menjadi dasar
+              pengambilan keputusan yang lebih terarah dan berkelanjutan.
+            </h5>
           </div>
           {% endif %}
         </div>
+        {% endif %}
+
         <div class="row mt-3 p-3">
           <div class="row mt-3">
             <div class="col-md-8">
@@ -163,34 +156,29 @@
           </div>
           <div class="row mt-3">
             <div class="col-md">
-              <img class="img-fluid" src="/static/images/find-code.png" alt="find_code" />
-            </div>
-          </div>
-        </div>
-        <div class="row justify-content-center text-center mt-3 p-3">
-          <div class="row">
-            <div class="col-md mt-3">
-              <h2>Hubungi Saya</h2>
-            </div>
-          </div>
-          <div class="row justify-content-center">
-            <div class="col-md-8 mt-3">
-              <h5 class="secondary-text">Jika anda memiliki pertanyaan atau butuh bantuan, jangan ragu untuk menghubungi saya. Saya siap membantu Anda</h5>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md mt-3">
-              <h5>+62 8133 8665 572</h5>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md mt-3">
-              <h5>Sang Made Yudha Ardianatha</h5>
+              <img class="img-fluid" src="/static/images/find-code.png" alt="find_code" width="1500" />
             </div>
           </div>
         </div>
       </div>
     </section>
+    <footer class="bg-primary text-white py-4 mt-5">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-md-6 text-center text-md-start mb-2 mb-md-0">
+            <p class="mb-0">&copy; 2025 <strong>Sentiment Analyzer</strong></p>
+          </div>
+          <div class="col-md-6 text-center text-md-end">
+            <small>by: <strong>Sang Made Yudha Ardianatha</strong> | 📞 0813-3866-5572</small>
+          </div>
+        </div>
+      </div>
+    </footer>
+    <div id="loadingOverlay" style="display: none">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
   </body>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
   <script>
@@ -220,12 +208,14 @@
     });
 
     function showInput(type) {
+      // Reset semua input dan tombol
       inputSentiment.classList.add("d-none");
       inputFile.classList.add("d-none");
       inputKode.classList.add("d-none");
 
       buttons.forEach((btn) => btn.classList.remove("active"));
 
+      // Tampilkan sesuai tipe yang dipilih
       if (type === "sentiment") {
         inputSentiment.classList.remove("d-none");
         btnSentiment.classList.add("active");
@@ -273,5 +263,105 @@
         this.classList.remove("is-invalid");
       });
     });
+
+    const showLoading = () => {
+      document.getElementById("loadingOverlay").style.display = "flex";
+    };
+
+    document.getElementById("textForm").addEventListener("submit", function (e) {
+      const input = this.querySelector('input[name="text"]');
+      if (!input.value.trim()) {
+        e.preventDefault();
+        input.classList.add("is-invalid");
+      } else {
+        showLoading();
+      }
+    });
+
+    document.getElementById("fileForm").addEventListener("submit", function (e) {
+      const input = this.querySelector('input[name="file"]');
+      if (!input.files || input.files.length === 0) {
+        e.preventDefault();
+        input.classList.add("is-invalid");
+      } else {
+        showLoading();
+      }
+    });
+
+    document.getElementById("appForm").addEventListener("submit", function (e) {
+      const input = this.querySelector('input[name="app_code"]');
+      if (!input.value.trim()) {
+        e.preventDefault();
+        input.classList.add("is-invalid");
+      } else {
+        showLoading();
+      }
+    });
   </script>
 </html>
+<style>
+  * {
+    font-family: poppins, sans-serif;
+  }
+  .bg-image {
+    position: relative;
+    background-image: url("/static/images/bg-index.jpg");
+    background-size: cover;
+    background-position: center;
+    z-index: 1;
+    color: white;
+    height: 80vh;
+  }
+
+  .bg-image::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: -1;
+  }
+
+  .secondary-text {
+    color: #6d6d6d;
+    font-size: 1rem;
+  }
+
+  .wc-img {
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+  }
+
+  a {
+    text-decoration: none;
+  }
+
+  .chart-canvas {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  #sentimentChart {
+    max-width: 300px;
+    max-height: 300px;
+  }
+
+  #loadingOverlay {
+    position: fixed;
+    z-index: 9999;
+    background-color: rgba(255, 255, 255, 0.8);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+</style>

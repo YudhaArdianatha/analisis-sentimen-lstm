@@ -25,6 +25,8 @@ UPLOAD_FOLDER = 'uploads'
 RESULT_FOLDER = 'results'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(RESULT_FOLDER, exist_ok=True)
+WORDCLOUD_FOLDER = os.path.join('static', 'wordcloud_result')
+os.makedirs(WORDCLOUD_FOLDER, exist_ok=True)
 
 
 model = load_model('model/best_lstm_modelV2.h5')
@@ -110,18 +112,21 @@ def analyze_csv():
     'netral': round(sentiment_counts.get('netral', 0), 2)
     }
 
-    wordclod_filename = f'wordcloud_{result_filename}_{uuid.uuid4().hex}.png'
-    all_text = ' '.join(df['stemmed'])
-    wordcloud_path = os.path.join('static', wordclod_filename)
-    generate_wordcloud(all_text, wordcloud_path)
+    wordcloud_filename = f'wordcloud_{uuid.uuid4().hex}.png'
+    wordcloud_path = os.path.join(WORDCLOUD_FOLDER, wordcloud_filename)
+    generate_wordcloud(' '.join(df['stemmed']), wordcloud_path)
+
 
     return render_template(
-        'outputPage.html',
+        'index.html',
         percentages=sentiment_percentage,
         download_link=result_filename,
         jumlah_data=jumlah_data,
-        wordcloud_path=f'static/{wordclod_filename}',
+        wordcloud_path=os.path.join('static', 'wordcloud_result', wordcloud_filename),
         average_confidence=average_confidence,
+        filename=filename,
+        app_code_analysis=False,
+        app_code=None
         )
 
 @app.route('/download/<filename>')
@@ -150,7 +155,15 @@ def analyze_text():
     decoded_label = label_encoder.inverse_transform(prediction_label)
     confidence_score = float(np.max(prediction))
 
-    return render_template('outputPage.html', sentiment=decoded_label[0], text=text, stemmed=stemmed, confidence_score=confidence_score)
+    return render_template(
+        'index.html', 
+        sentiment=decoded_label[0], 
+        text=text, 
+        stemmed=stemmed, 
+        confidence_score=confidence_score,
+        app_code_analysis=False,
+        app_code=None 
+        )
 
 @app.route('/analyze_appcode', methods=['POST'])
 def analyze_appcode():
@@ -164,7 +177,7 @@ def analyze_appcode():
             lang='id',
             country='ID',
             sort=Sort.NEWEST,
-            count=1000
+            count=10
         )
         if not result:
             return render_template('index.html', error_message="Tidak ada ulasan yang ditemukan untuk kode aplikasi ini.")
@@ -174,7 +187,7 @@ def analyze_appcode():
     
     
     df = pd.DataFrame(result)
-    df = df[['content']]
+    df = df[['content', 'userName', 'at', 'reviewCreatedVersion']]
 
     df['stemmed'] = df['content'].astype(str).apply(preprocess_new_text)
 
@@ -202,18 +215,20 @@ def analyze_appcode():
         'netral': round(sentiment_counts.get('netral', 0), 2)
     }
 
-    wordclod_filename = f'wordcloud_{app_code}_{uuid.uuid4().hex}.png'
-    all_text = ' '.join(df['stemmed'])
-    wordcloud_path = os.path.join('static', wordclod_filename)
-    generate_wordcloud(all_text, wordcloud_path)
+    wordcloud_filename = f'wordcloud_{uuid.uuid4().hex}.png'
+    wordcloud_path = os.path.join(WORDCLOUD_FOLDER, wordcloud_filename)
+    generate_wordcloud(' '.join(df['stemmed']), wordcloud_path)
+
 
     return render_template(
-        'outputPage.html',
+        'index.html',
         percentages=sentiment_percentage,
         download_link=result_filename,
         jumlah_data=jumlah_data,
-        wordcloud_path=f'static/{wordclod_filename}',
+        wordcloud_path=os.path.join('static', 'wordcloud_result', wordcloud_filename),
         average_confidence=average_confidence,
+        app_code_analysis=True,
+        app_code=app_code
     )
 
 def generate_wordcloud(text, save_path):

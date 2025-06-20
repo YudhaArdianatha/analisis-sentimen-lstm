@@ -27,3 +27,5 @@ nltk_data/
 
 results/
 uploads/
+
+static/wordcloud_result/

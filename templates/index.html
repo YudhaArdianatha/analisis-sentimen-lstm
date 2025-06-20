@@ -3,203 +3,393 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
     <title>Analisis Sentimen LSTM</title>
+    <style></style>
   </head>
   <body>
-    <div class="px-4 py-5 my-5 text-center mt-0 bg-image">
-      <h1 class="display-5 fw-bold mt-5">Analisis Sentimen</h1>
-      <div class="col-lg-6 mx-auto">
-        <p class="lead mb-4">
+    <div class="bg-image">
+      <div class="hero-content">
+        <h1 class="display-4 fw-bold mb-4"><i class="fas fa-brain me-3"></i>Analisis Sentimen</h1>
+        <p class="lead mb-4 px-3 col-md-8 mx-auto">
           Analisis sentimen adalah proses memahami dan mengelompokkan emosi dalam teks untuk mengungkap opini positif, negatif, atau netral, sehingga membantu bisnis dan peneliti memahami pandangan pengguna secara mendalam.
         </p>
-        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
-          <button type="button" class="btn btn-dark btn-lg px-4 gap-3">Mulai Analisis</button>
+        <button type="button" class="btn btn-light btn-lg px-4 rounded-pill shadow-lg" onclick="document.querySelector('.input-section').scrollIntoView({behavior: 'smooth'})"><i class="fas fa-rocket me-2"></i>Mulai Analisis</button>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="input-section">
+        <div class="text-center mb-4">
+          <h2 class="section-title"><i class="fas fa-keyboard me-2"></i>Input Sentimen</h2>
+          <p class="text-muted">Input dapat berupa ulasan, file excel, atau kode dari aplikasi</p>
+        </div>
+
+        <!-- Error Message Section -->
+        {% if error_message %}
+        <div class="row justify-content-center text-center mt-3">
+          <div class="col-md-6">
+            <div class="alert alert-danger">{{ error_message }}</div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Input Method Buttons -->
+        <div class="row justify-content-center align-items-center text-center m-3">
+          <div class="col-md-2">
+            <button class="input-method-btn {% if not percentages or (sentiment and not percentages) %}active{% endif %}" id="btnSentiment">Ulasan</button>
+          </div>
+          <div class="col-md-2">
+            <button class="input-method-btn {% if percentages and not sentiment and not app_code_analysis %}active{% endif %}" id="btnFile">File Excel</button>
+          </div>
+          <div class="col-md-2 me-5">
+            <button class="input-method-btn {% if percentages and app_code_analysis %}active{% endif %}" id="btnKode">Kode Aplikasi</button>
+          </div>
+        </div>
+
+        <!-- Input Forms -->
+        <div class="row justify-content-center">
+          <div class="col-md-8">
+            <!-- Text Input Form -->
+            <form id="textForm" action="/analyze_text" method="POST" class="input-form {% if not percentages or (sentiment and not percentages) %}active{% endif %}">
+              <div class="mb-3">
+                <label for="textInput" class="form-label">Masukkan Ulasan:</label>
+                <div class="input-group">
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="textInput"
+                    name="text"
+                    placeholder="Contoh: Aplikasi ini sangat bagus dan mudah digunakan!"
+                    required
+                    autocomplete="off"
+                    value="{% if sentiment and text %}{{ text }}{% endif %}"
+                  />
+                  <button class="btn btn-outline-secondary" type="submit"><i class="fas fa-paper-plane me-1"></i>Submit</button>
+                </div>
+                <div id="textError" class="text-danger mt-2" style="display: none">Harap masukkan ulasan terlebih dahulu.</div>
+              </div>
+            </form>
+
+            <!-- File Upload Form -->
+            <form id="fileForm" action="/analyze_csv" method="POST" enctype="multipart/form-data" class="input-form {% if percentages and not sentiment and not app_code_analysis %}active{% endif %}">
+              <div class="mb-3">
+                <label for="fileInput" class="form-label">Upload File Excel:</label>
+                <div class="input-group">
+                  <input type="file" class="form-control" id="fileInput" name="file" accept=".xlsx, .xls" required />
+                  <button class="btn btn-outline-secondary" type="submit"><i class="fas fa-upload me-1"></i>Upload</button>
+                </div>
+                <div id="fileError" class="text-danger mt-2" style="display: none">Harap unggah file terlebih dahulu.</div>
+                <div class="info-text mt-3">
+                  <p class="mb-1"><strong>Catatan Penting:</strong></p>
+                  <p class="mb-1">• Semakin banyak data, semakin lama prosesnya</p>
+                  <p class="mb-0">• Kolom ulasan harus bernama 'content' (tanpa tanda petik)</p>
+                </div>
+              </div>
+            </form>
+
+            <!-- App Code Form -->
+            <form id="appForm" action="/analyze_appcode" method="POST" class="input-form {% if percentages and app_code_analysis %}active{% endif %}">
+              <div class="mb-3">
+                <label for="appCodeInput" class="form-label">Masukkan Kode Aplikasi:</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" id="appCodeInput" name="app_code" placeholder="Contoh: com.example.myapp" required autocomplete="off" value="{% if app_code_analysis and app_code %}{{ app_code }}{% endif %}" />
+                  <button class="btn btn-outline-secondary" type="submit"><i class="fas fa-search me-1"></i>Analisis</button>
+                </div>
+                <div id="appCodeError" class="text-danger mt-2" style="display: none">Harap masukkan kode aplikasi terlebih dahulu.</div>
+                <div class="info-text mt-3">
+                  <p class="mb-1"><strong>Cara mencari kode aplikasi:</strong></p>
+                  <p class="mb-0">Lihat panduan di bawah untuk menemukan kode aplikasi di Google Play Store</p>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Section -->
+      {% if sentiment or percentages %}
+      <div class="results-section" id="resultsSection">
+        <div class="row mt-5 p-3">
+          <div class="col-md-12 text-center">
+            <h2>Hasil Analisis Sentimen</h2>
+          </div>
+
+          {% if sentiment %}
+          <div class="text-center mt-3">
+            <h4>Ulasan: <span id="analyzedText">{{ text }}</span></h4>
+            <h4>Prediksi sentimen: <span id="sentimentResult">{{ sentiment }}</span></h4>
+            <h5>Confidence Score: <span id="confidenceScore">{{ confidence_score | round(4) }}</span></h5>
+          </div>
+          {% endif %} {% if percentages %}
+          <div class="row justify-content-center align-items-center mt-4">
+            <div class="col-md-6">
+              <canvas id="sentimentChart" class="chart-canvas"></canvas>
+            </div>
+            <div class="col-md-6">
+              {% if wordcloud_path %}
+              <img src="/{{ wordcloud_path }}" alt="Word Cloud" class="img-fluid rounded shadow" />
+              {% else %}
+              <div class="text-center">
+                <div class="bg-light rounded p-4">
+                  <i class="fas fa-cloud text-primary" style="font-size: 3rem"></i>
+                  <p class="mt-2">Word Cloud akan muncul di sini</p>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if average_confidence %}
+          <div class="text-center mt-3">
+            <h5>Rata-rata Confidence Score: {{ average_confidence }}</h5>
+          </div>
+          {% endif %}
+
+          <script>
+            var ctx = document.getElementById("sentimentChart").getContext("2d");
+            var sentimentData = {{ [percentages['positif'], percentages['negatif'], percentages['netral']] | tojson }};
+            var sentimentChart = new Chart(ctx, {
+              type: 'pie',
+              data: {
+                labels: ['Positif', 'Negatif', 'Netral'],
+                datasets: [{
+                  label: 'Persentase Sentimen',
+                  data: sentimentData,
+                  backgroundColor: ['#4CAF50', '#F44336', '#FFC107']
+                }]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                height: 300
+              }
+            });
+          </script>
+
+          <div class="row mt-4">
+            <div class="col-md-11">
+              <h4>Kesimpulan</h4>
+            </div>
+            <div class="col-md-1">
+              {% if download_link %}
+              <a href="/download/{{ download_link }}"
+                ><button class="btn btn-primary"><i class="fas fa-download me-1"></i>Download</button></a
+              >
+              {% else %}
+              <button class="btn btn-primary"><i class="fas fa-download me-1"></i>Download</button>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <h5>
+              {% if jumlah_data %} Dari total {{ jumlah_data }} ulasan yang diambil dari {% if app_code %} aplikasi dengan kode <strong>{{ app_code }}</strong> {% elif filename %} file <strong>{{ filename }}</strong>
+              {% else %} sumber tidak dikenal {% endif %}, {{ percentages['positif'] }}% positif, {{ percentages['negatif'] }}% negatif, dan {{ percentages['netral'] }}% netral. Gunakan data ini sebaik mungkin untuk memahami persepsi
+              pengguna dan meningkatkan kualitas layanan secara menyeluruh. Temuan ini dapat membantu dalam mengidentifikasi keunggulan serta area yang masih perlu diperbaiki. Dengan analisis yang tepat, data ini dapat menjadi dasar
+              pengambilan keputusan yang lebih terarah dan berkelanjutan. {% else %} Analisis sentimen telah selesai. Gunakan hasil ini untuk memahami persepsi pengguna dan meningkatkan kualitas layanan secara menyeluruh. Temuan ini dapat
+              membantu dalam mengidentifikasi keunggulan serta area yang masih perlu diperbaiki. {% endif %}
+            </h5>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Guide Section -->
+      <div class="guide-section">
+        <div class="text-center mb-4">
+          <h2 class="section-title"><i class="fas fa-question-circle me-2"></i>Tahapan Mencari Kode Aplikasi</h2>
+        </div>
+        <div class="text-center">
+          <img class="img-fluid" src="/static/images/find-code.png" alt="find_code" width="1500" />
         </div>
       </div>
     </div>
-    <section class="input">
-      <div class="container">
-        <div class="row">
-          <div class="row justify-content-center text-center">
-            <div class="col">
-              <h1>Input Sentimen</h1>
-            </div>
-          </div>
-          <div class="row justify-content-center text-center mt-1">
-            <div class="col-md-6">
-              <h5 class="secondary-text">Input dapat berupa ulasan / file excel / kode dari aplikasi</h5>
-            </div>
-          </div>
-          {% if error_message %}
-          <div class="row justify-content-center text-center mt-3">
-            <div class="col-md-6">
-              <div class="alert alert-danger">{{ error_message }}</div>
-            </div>
-          </div>
-          {% endif %}
-          <div class="row justify-content-center align-items-center text-center m-3">
-            <div class="col-md-2">
-              <button class="btn btn-outline-primary" id="btnSentiment">Ulasan</button>
-            </div>
-            <div class="col-md-2">
-              <button class="btn btn-outline-primary" id="btnFile">File Excel</button>
-            </div>
-            <div class="col-md-2 me-5">
-              <button class="btn btn-outline-primary" id="btnKode">Kode Aplikasi</button>
-            </div>
-          </div>
-          <div class="row justify-content-center">
-            <div class="col-md-6">
-              <form action="/analyze_text" method="POST">
-                <div class="input-group mb-3" id="inputSentiment">
-                  <input type="text" class="form-control" name="text" placeholder="Masukan suatu ulasan" required autocomplete="off" />
-                  <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Submit</button>
-                  <div id="textError" class="text-danger mb-3" style="display: none">Harap masukkan ulasan terlebih dahulu.</div>
-                </div>
-              </form>
-              <form action="/analyze_csv" method="POST" enctype="multipart/form-data">
-                <div class="input-group text-center justify-content-center" id="inputFile">
-                  <div class="input-group">
-                    <input type="file" class="form-control" name="file" accept=".xlsx, .xls" placeholder="Masukan File .csv" required />
-                    <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Upload</button>
-                  </div>
-                  <div id="fileError" class="text-danger mb-3" style="display: none">Harap unggah file terlebih dahulu.</div>
 
-                  <h5 class="secondary-text mt-3">Semakin banyak data, semakin lama prosesnya.</h5>
-                  <h5 class="secondary-text">Kolom ulasan harus bernama 'content' (tanpa tanda petik).</h5>
-                </div>
-              </form>
-              <form action="/analyze_appcode" method="POST" enctype="multipart/form-data">
-                <div class="input-group" id="inputKode">
-                  <input type="text" class="form-control" name="app_code" placeholder="Masukan kode aplikasi" required autocomplete="off" />
-                  <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Submit</button>
-                  <div id="appCodeError" class="text-danger mt-2" style="display: none">Harap masukkan kode aplikasi terlebih dahulu.</div>
-                </div>
-              </form>
-            </div>
+    <!-- Footer -->
+    <footer>
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-md-6 text-center text-md-start mb-2 mb-md-0">
+            <p class="mb-0"><i class="fas fa-copyright me-2"></i>2025 <strong>Sentiment Analyzer</strong></p>
           </div>
-        </div>
-        <div class="row mt-3 p-3">
-          <div class="row mt-3">
-            <div class="col-md-8">
-              <h2>Tahapan Mencari Kode Aplikasi</h2>
-            </div>
-          </div>
-          <div class="row mt-3">
-            <div class="col-md">
-              <img class="img-fluid" src="/static/images/find-code.png" alt="find_code" />
-            </div>
-          </div>
-        </div>
-        <div class="row justify-content-center text-center mt-3 p-3">
-          <div class="row">
-            <div class="col-md mt-3">
-              <h2>Hubungi Saya</h2>
-            </div>
-          </div>
-          <div class="row justify-content-center">
-            <div class="col-md-8 mt-3">
-              <h5 class="secondary-text">Jika anda memiliki pertanyaan atau butuh bantuan, jangan ragu untuk menghubungi saya. Saya siap membantu Anda</h5>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md mt-3">
-              <h5>+62 8133 8665 572</h5>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md mt-3">
-              <h5>Sang Made Yudha Ardianatha</h5>
-            </div>
+          <div class="col-md-6 text-center text-md-end">
+            <small> <i class="fas fa-user me-1"></i>by: <strong>Sang Made Yudha Ardianatha</strong> | <i class="fas fa-phone me-1"></i>0813-3866-5572 </small>
           </div>
         </div>
       </div>
-    </section>
-  </body>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
-  <script>
-    const btnSentiment = document.getElementById("btnSentiment");
-    const btnFile = document.getElementById("btnFile");
-    const btnKode = document.getElementById("btnKode");
+    </footer>
 
-    const inputSentiment = document.getElementById("inputSentiment");
-    const inputFile = document.getElementById("inputFile");
-    const inputKode = document.getElementById("inputKode");
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none">
+      <div class="text-center">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3 text-muted">Sedang memproses analisis...</p>
+      </div>
+    </div>
 
-    const buttons = [btnSentiment, btnFile, btnKode];
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
 
-    btnSentiment.addEventListener("click", function () {
-      showInput("sentiment");
-      localStorage.setItem("lastInput", "sentiment");
-    });
+    <script>
+      // DOM Elements
+      const btnSentiment = document.getElementById("btnSentiment");
+      const btnFile = document.getElementById("btnFile");
+      const btnKode = document.getElementById("btnKode");
 
-    btnFile.addEventListener("click", function () {
-      showInput("file");
-      localStorage.setItem("lastInput", "file");
-    });
+      const textForm = document.getElementById("textForm");
+      const fileForm = document.getElementById("fileForm");
+      const appForm = document.getElementById("appForm");
 
-    btnKode.addEventListener("click", function () {
-      showInput("kode");
-      localStorage.setItem("lastInput", "kode");
-    });
+      const buttons = [btnSentiment, btnFile, btnKode];
+      const forms = [textForm, fileForm, appForm];
 
-    function showInput(type) {
-      // Reset semua input dan tombol
-      inputSentiment.classList.add("d-none");
-      inputFile.classList.add("d-none");
-      inputKode.classList.add("d-none");
-
-      buttons.forEach((btn) => btn.classList.remove("active"));
-
-      // Tampilkan sesuai tipe yang dipilih
-      if (type === "sentiment") {
-        inputSentiment.classList.remove("d-none");
-        btnSentiment.classList.add("active");
-      } else if (type === "file") {
-        inputFile.classList.remove("d-none");
-        btnFile.classList.add("active");
-      } else if (type === "kode") {
-        inputKode.classList.remove("d-none");
-        btnKode.classList.add("active");
-      }
-    }
-
-    // Ambil pilihan terakhir dari localStorage saat halaman dimuat
-    const lastInput = localStorage.getItem("lastInput") || "sentiment";
-    showInput(lastInput);
-
-    // Validasi form sebelum submit
-    document.getElementById("textForm").addEventListener("submit", function (e) {
-      const input = this.querySelector('input[name="text"]');
-      if (!input.value.trim()) {
-        e.preventDefault();
-        input.classList.add("is-invalid");
-      }
-    });
-
-    document.getElementById("fileForm").addEventListener("submit", function (e) {
-      const input = this.querySelector('input[name="file"]');
-      if (!input.files || input.files.length === 0) {
-        e.preventDefault();
-        input.classList.add("is-invalid");
-      }
-    });
-
-    document.getElementById("appForm").addEventListener("submit", function (e) {
-      const input = this.querySelector('input[name="app_code"]');
-      if (!input.value.trim()) {
-        e.preventDefault();
-        input.classList.add("is-invalid");
-      }
-    });
-
-    // Reset validasi saat input diubah
-    document.querySelectorAll("input").forEach((input) => {
-      input.addEventListener("input", function () {
-        this.classList.remove("is-invalid");
+      // Event Listeners for input method buttons
+      btnSentiment.addEventListener("click", function () {
+        showInput("sentiment");
+        saveLastInput("sentiment");
       });
-    });
-  </script>
+
+      btnFile.addEventListener("click", function () {
+        showInput("file");
+        saveLastInput("file");
+      });
+
+      btnKode.addEventListener("click", function () {
+        showInput("kode");
+        saveLastInput("kode");
+      });
+
+      // Show Input Function
+      function showInput(type) {
+        // Remove active class from all buttons and forms
+        buttons.forEach((btn) => btn.classList.remove("active"));
+        forms.forEach((form) => form.classList.remove("active"));
+
+        // Show selected input and activate button
+        if (type === "sentiment") {
+          textForm.classList.add("active");
+          btnSentiment.classList.add("active");
+        } else if (type === "file") {
+          fileForm.classList.add("active");
+          btnFile.classList.add("active");
+        } else if (type === "kode") {
+          appForm.classList.add("active");
+          btnKode.classList.add("active");
+        }
+      }
+
+      // Save and load last input preference (using in-memory variable instead of localStorage)
+      let lastInputType = "sentiment";
+
+      function saveLastInput(type) {
+        lastInputType = type;
+      }
+
+      function getLastInput() {
+        return lastInputType;
+      }
+
+      // Initialize based on server response or default
+      function initializeFormState() {
+        // Check if we have results and determine which form was used
+        {% if sentiment and not percentages %}
+        // Single text analysis
+        showInput("sentiment");
+        {% elif percentages and not sentiment and not app_code_analysis %}
+        // File analysis (multiple results but no single sentiment)
+        showInput("file");
+        {% elif percentages and app_code_analysis %}
+        // App code analysis
+        showInput("kode");
+        {% else %}
+        // Default to sentiment input
+        showInput("sentiment");
+        {% endif %}
+      }
+
+      // Initialize with correct form state
+      initializeFormState();
+
+      // Form Validation and Loading
+      document.getElementById("textForm").addEventListener("submit", function (e) {
+        const input = this.querySelector('input[name="text"]');
+        const errorDiv = document.getElementById("textError");
+
+        if (!input.value.trim()) {
+          e.preventDefault();
+          input.classList.add("is-invalid");
+          errorDiv.style.display = "block";
+        } else {
+          errorDiv.style.display = "none";
+          showLoading();
+        }
+      });
+
+      document.getElementById("fileForm").addEventListener("submit", function (e) {
+        const input = this.querySelector('input[name="file"]');
+        const errorDiv = document.getElementById("fileError");
+
+        if (!input.files || input.files.length === 0) {
+          e.preventDefault();
+          input.classList.add("is-invalid");
+          errorDiv.style.display = "block";
+        } else {
+          errorDiv.style.display = "none";
+          showLoading();
+        }
+      });
+
+      document.getElementById("appForm").addEventListener("submit", function (e) {
+        const input = this.querySelector('input[name="app_code"]');
+        const errorDiv = document.getElementById("appCodeError");
+
+        if (!input.value.trim()) {
+          e.preventDefault();
+          input.classList.add("is-invalid");
+          errorDiv.style.display = "block";
+        } else {
+          errorDiv.style.display = "none";
+          showLoading();
+        }
+      });
+
+      // Remove validation classes on input
+      document.querySelectorAll("input").forEach((input) => {
+        input.addEventListener("input", function () {
+          this.classList.remove("is-invalid");
+          // Hide error messages
+          const errorDivs = document.querySelectorAll(".text-danger");
+          errorDivs.forEach((div) => (div.style.display = "none"));
+        });
+      });
+
+      // Show/Hide Loading Functions
+      function showLoading() {
+        document.getElementById("loadingOverlay").style.display = "flex";
+      }
+
+      function hideLoading() {
+        document.getElementById("loadingOverlay").style.display = "none";
+      }
+
+      // Initialize page
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("Sentiment Analyzer initialized successfully!");
+
+        // If results are present, scroll to them
+        {% if sentiment or percentages %}
+        setTimeout(() => {
+          document.getElementById("resultsSection").scrollIntoView({ behavior: "smooth" });
+        }, 500);
+        {% endif %}
+      });
+    </script>
+  </body>
 </html>

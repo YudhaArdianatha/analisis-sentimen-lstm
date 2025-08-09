@@ -24,3 +24,8 @@ nltk_data/
 .DS_Store
 .vscode/
 .idea/
+
+results/
+uploads/
+
+static/wordcloud_result

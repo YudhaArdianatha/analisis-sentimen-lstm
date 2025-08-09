@@ -177,7 +177,7 @@ def analyze_appcode():
             lang='id',
             country='ID',
             sort=Sort.NEWEST,
-            count=10
+            count=30
         )
         if not result:
             return render_template('index.html', error_message="Tidak ada ulasan yang ditemukan untuk kode aplikasi ini.")

@@ -1,0 +1,9 @@
+flask
+pandas
+numpy
+matplotlib
+wordcloud
+google-play-scraper
+tensorflow
+sastrawi
+openpyxl
